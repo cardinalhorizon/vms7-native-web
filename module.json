@@ -1,7 +1,7 @@
 {
     "name": "SmartCARSNative",
     "alias": "smartcarsnative",
-    "description": "",
+    "description": "A phpVMS v7 module implementation of the smartCARS 3 API with extended features",
     "keywords": [],
     "active": 1,
     "order": 0,
