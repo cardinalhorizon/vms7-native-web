@@ -20,13 +20,13 @@ Route::group(['middleware' => [SCHeaders::class]], function() {
     Route::group(['middleware' => [SCAuth::class]], function() {
         Route::match(['get', 'options'], '/pilot/statistics', [PilotController::class, 'statistics']);
         Route::group(['prefix' => '/data', 'controller' => DataController::class], function () {
-            Route::match(['get', 'options'], '/aircraft', 'aircraft');
-            Route::match(['get', 'options'], '/airports', 'airports');
+            Route::match(['get', 'options', 'post'], '/aircraft', 'aircraft');
+            Route::match(['get', 'options', 'post'], '/airports', 'airports');
             Route::match(['get', 'options'], '/news', 'news');
         });
         Route::group(['prefix' => '/pireps', 'controller' => PirepsController::class], function () {
-            Route::match(['get', 'options'], '/details', 'details');
-            Route::match(['get', 'options'], '/search', 'search');
+            Route::match(['get', 'options', 'post'], '/details', 'details');
+            Route::match(['get', 'options', 'post'], '/search', 'search');
         });
         Route::group(['prefix' => '/flights', 'controller' => FlightsController::class], function () {
             Route::match(['post', 'options'], '/book', 'book');
