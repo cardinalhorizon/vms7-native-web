@@ -4,10 +4,11 @@ Welcome to smartCARS Native, a native implementation of the smartCARS 3 API dire
 This module was created to address proper phpVMS 7 best practices for handling data, which are not present in the 1st
 party solution, located at https://github.com/invernyx/smartcars-3-public-api.
 
-With this module installed, you will gain additional functionality not possible in the 1st party solution, including:
+With this module installed, you will gain additional functionality not present in the 1st party solution, including:
 
 * Discord/Email Notifications
 * Auto-Accepting PIREP Rules Followed
+* Under the hood changes to the data handling to conform to the phpVMS 7 schema.
 
 ## Installation
 Move this folder into your `modules` folder and verify that the folder is named `SmartCARSNative`.
