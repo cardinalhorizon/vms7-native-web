@@ -19,6 +19,7 @@ use App\Services\FlightService;
 use App\Services\PirepService;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -65,7 +66,7 @@ class FlightsController extends Controller
                 "code" => $bid->flight->airline->code,
                 "departureAirport" => $bid->flight->dpt_airport_id,
                 "arrivalAirport" => $bid->flight->arr_airport_id,
-                "route" => $bid->flight->route,
+                "route" => [],
                 "flightLevel" => $bid->flight->level,
                 "distance" => $bid->flight->distance,
                 "departureTime" => $bid->flight->dpt_time,
@@ -187,6 +188,27 @@ class FlightsController extends Controller
         }
 
         return response()->json($output);
+    }
+    public function start(Request $request)
+    {
+        $user = Auth::user();
+        $bid = $user->bids->find($request->get('bidID'));
+        $flight = Flight::find($bid->flight_id);
+
+        $attrs = [
+            'flight_number' => $flight->flight_number,
+            'airline_id' => $flight->airline_id,
+            'dpt_airport_id' => $flight->dpt_airport_id,
+            'arr_airport_id' => $flight->arr_airport_id,
+            'aircraft_id' => $request->get('aircraftID')
+        ];
+        try {
+            $pirep = $this->pirepService->prefile(Auth::user(), $attrs);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 401);
+        }
+        return response()->json($pirep);
+
     }
     public function unbook(Request $request)
     {
