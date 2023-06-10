@@ -2,8 +2,10 @@
 
 namespace Modules\SmartCARSNative\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Modules\SmartCARSNative\Models\SmartCARS3Session;
 
 /**
@@ -22,11 +24,13 @@ class SCAuth
     public function handle(Request $request, Closure $next)
     {
         $token = $request->bearerToken();
-        //dd($token);
-        $model = SmartCARS3Session::where('session_id', $token)->first();
+
+        $model = User::where('api_key', $token)->first();
+        //dd($model);
         if (!is_null($model))
         {
-            $request->attributes->add(['pilotID' => $model->user_id]);
+            Auth::setUser($model);
+            $request->attributes->add(['pilotID' => $model->id]);
             return $next($request);
         }
 
