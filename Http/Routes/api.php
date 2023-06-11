@@ -33,6 +33,7 @@ Route::group(['middleware' => [SCHeaders::class]], function() {
             Route::match(['get', 'options'], '/bookings', 'bookings');
             Route::match(['post', 'options'], '/charter', 'charter');
             Route::match(['post', 'options'], '/complete', 'complete');
+            Route::match(['post', 'options'], '/prefile', 'prefile');
             Route::match(['get', 'options'], '/search', 'search');
             Route::match(['post', 'options'], '/unbook', 'unbook');
             Route::match(['post', 'options'], '/update', 'update');

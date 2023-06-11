@@ -89,8 +89,9 @@ class FlightsController extends Controller
         $client = new Client();
         try {
             $input = $request->all();
+            logger($input);
             //Log::error();
-             //($request->all());
+            //($request->all());
             $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
                 'form_params' => [
                     'content' => "Request "//var_dump($input)
@@ -109,6 +110,7 @@ class FlightsController extends Controller
             $pirep->aircraft_id = $input['aircraft'];
             $pirep->landing_rate = $input['landingRate'];
             $pirep->fuel_used = $input['fuelUsed'];
+            $pirep->flight_time = $input['flightTime']  * 60;
 
             foreach ($input['flightData'] as $data) {
                 $log_item = new Acars();
@@ -116,10 +118,16 @@ class FlightsController extends Controller
                 $log_item->log = $data['message'];
                 $pirep->acars_logs()->save($log_item);
             }
-            if (!is_null($input))
+            if (!is_null($input['comments']))
             {
-                foreach ($input['comments'] as $comment) {
-                    //
+                foreach ($input['flightLog'] as $comment) {
+                    if (str_contains($comment, " Comment:"))
+                    {
+                        $pirep->comments()->create([
+                            'user_id' => Auth::user()->id,
+                            'comment' => $comment
+                        ]);
+                    }
                 }
             }
 
@@ -131,10 +139,12 @@ class FlightsController extends Controller
             return response()->json(['pirepID' => $pirep->id]);
         }catch (\Exception $e)
         {
+            logger("Exception for SmartCARS Native: ".$e->getMessage()." on line ".$e->getLine()."/r/n".$e->getTraceAsString());
             $client = new Client();
+
             $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
                 'form_params' => [
-                    'content' => "Exception for SmartCARS Native: ".$e->getMessage()." on line ".$e->getLine()."/r/n".$e->getTraceAsString()
+                    'content' => "Exception for SmartCARS Native: ".$e->getMessage()." on line ".$e->getLine()."/r/n"
                 ]
             ]);
         }
@@ -189,10 +199,11 @@ class FlightsController extends Controller
 
         return response()->json($output);
     }
-    public function start(Request $request)
+    public function prefile(Request $request)
     {
         $user = Auth::user();
-        $bid = $user->bids->find($request->get('bidID'));
+        $bid = Bid::find($request->input('bidID'));
+        logger($request->all());
         $flight = Flight::find($bid->flight_id);
 
         $attrs = [
@@ -200,14 +211,20 @@ class FlightsController extends Controller
             'airline_id' => $flight->airline_id,
             'dpt_airport_id' => $flight->dpt_airport_id,
             'arr_airport_id' => $flight->arr_airport_id,
-            'aircraft_id' => $request->get('aircraftID')
+            'aircraft_id' => $request->input('aircraftID'),
+            'flight_id' => $flight->id,
         ];
-        try {
-            $pirep = $this->pirepService->prefile(Auth::user(), $attrs);
-        } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 401);
+        // Check if the pirep already exists.
+        $existing = Pirep::where(['user_id' => $user->id, 'state' => PirepState::IN_PROGRESS])->first();
+        if (is_null($existing)) {
+            try {
+                $pirep = $this->pirepService->prefile(Auth::user(), $attrs);
+            } catch (\Exception $e) {
+                return response()->json(['message' => $e->getMessage()], 401);
+            }
+            return response()->json($pirep);
         }
-        return response()->json($pirep);
+        return response()->json($existing);
 
     }
     public function unbook(Request $request)
@@ -218,45 +235,46 @@ class FlightsController extends Controller
     {
         $client = new Client();
         try {
-        $input = $request->all();
-        $pilotID = $request->get('pilotID');
-        //$bid = Bid::join('pireps', 'bids.flight_id', '=', 'pireps.flight_id')
-        //    ->where(['bids.user_id' => $request->get('pilotID'), 'bids.id' => $request->input('bidID')])->first();
-        $bid = Bid::find($input['bidID']);
-        $pirep = Pirep::where([
-            'user_id' => $pilotID,
-            'flight_id' => $bid['flight_id'],
-            'state' => PirepState::IN_PROGRESS
-        ])->first();
-        if (is_null($pirep))
-        {
+            $input = $request->all();
+            logger($this->phaseToStatus($input['phase']));
+            $pilotID = $request->get('pilotID');
+            //$bid = Bid::join('pireps', 'bids.flight_id', '=', 'pireps.flight_id')
+            //    ->where(['bids.user_id' => $request->get('pilotID'), 'bids.id' => $request->input('bidID')])->first();
             $bid = Bid::find($input['bidID']);
-            $pirep = Pirep::fromFlight(Flight::find($bid->flight_id));
+            $pirep = Pirep::where([
+                'user_id' => $pilotID,
+                'flight_id' => $bid['flight_id'],
+                'state' => PirepState::IN_PROGRESS
+            ])->first();
+            if (is_null($pirep))
+            {
+                $bid = Bid::find($input['bidID']);
+                $pirep = Pirep::fromFlight(Flight::find($bid->flight_id));
 
-            $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
-                'form_params' => [
-                    'content' => "Creating Flight"
-                ]
-            ]);
-            $pirep->user()->associate($pilotID);
-            $pirep->state = PirepState::IN_PROGRESS;
-            $pirep->status = PirepStatus::BOARDING;
-            $pirep->source = PirepSource::ACARS;
-            $pirep->source_name = "smartCARS 3";
+                $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
+                    'form_params' => [
+                        'content' => "Creating Flight"
+                    ]
+                ]);
+                $pirep->user()->associate($pilotID);
+                $pirep->state = PirepState::IN_PROGRESS;
+                $pirep->status = PirepStatus::BOARDING;
+                $pirep->source = PirepSource::ACARS;
+                $pirep->source_name = "smartCARS 3";
+                $pirep->save();
+            }
+            $pirep->status = $this->phaseToStatus($input['phase']);
             $pirep->save();
-        }
-        $pirep->state = self::phaseToStatus($input->phase);
-        $pirep->save();
-        $pirep->acars()->create([
-            'status' => self::phaseToStatus($input->phase),
-            'type' => AcarsType::FLIGHT_PATH,
-            'lat' => $input['latitude'],
-            'lon' => $input['longitude'],
-            'distance' => $input['distanceRemaining'],
-            'heading' => $input['heading'],
-            'altitude' => $input['altitude'],
-            'gs' => $input['groundSpeed']
-        ]);
+            $pirep->acars()->create([
+                'status' => $this->phaseToStatus($input['phase']),
+                'type' => AcarsType::FLIGHT_PATH,
+                'lat' => $input['latitude'],
+                'lon' => $input['longitude'],
+                'distance' => $input['distanceRemaining'],
+                'heading' => $input['heading'],
+                'altitude' => $input['altitude'],
+                'gs' => $input['groundSpeed']
+            ]);
         }catch (\Exception $e)
         {
             $client = new Client();
@@ -268,7 +286,7 @@ class FlightsController extends Controller
         }
     }
 
-    function phaseToStatus(string $phase): string {
+    function phaseToStatus(string $phase) {
         switch(strtolower($phase)) {
             case 'boarding':
                 return PirepStatus::BOARDING;
@@ -302,6 +320,8 @@ class FlightsController extends Controller
                 return PirepStatus::ARRIVED;
             case 'diverted':
                 return PirepStatus::DIVERTED;
+            default:
+                return null;
         }
     }
 
