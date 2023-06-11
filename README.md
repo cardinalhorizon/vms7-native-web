@@ -15,8 +15,6 @@ Move this folder into your `modules` folder and verify that the folder is named 
 
 Then, using the Admin Interface, go to Modules and Enable the module.
 
-Clear all caches using the maintenance tab and open your admin dashboard to start the migration.
-
 Finally, enter the following url for your community in smartCARS Central:
 ```text
 https://yourdomainhere.com/api/smartcarsnative/
