@@ -25,16 +25,29 @@ class DataController extends Controller
      */
     public function aircraft(Request $request)
     {
-        if ($request->get('state') === "parked")
-            $aircraft = Aircraft::where('state', AircraftState::PARKED)->get();
-        else
+        //if ($request->get('state') === "parked")
+        //    $aircraft = Aircraft::where('state', AircraftState::PARKED)->get();
+        //else
             $aircraft = Aircraft::all();
         $output = [];
         foreach ($aircraft as $item) {
+            $state = "";
+            switch ($item->state) {
+                case AircraftState::PARKED:
+                    $state = "Available";
+                    break;
+                case AircraftState::IN_USE:
+                    $state = "In Use";
+                    break;
+                case AircraftState::IN_AIR:
+                    $state = "In Air";
+                    break;
+            }
             $output[] = [
                 "id" => $item->id,
                 "code" => $item->icao,
                 "name" => "{$item->name} ({$item->registration})",
+                "state" => $state,
                 "serviceCeiling" => "40000",
                 "maximumPassengers" => 300,
                 "maximumCargo" => 1000,
