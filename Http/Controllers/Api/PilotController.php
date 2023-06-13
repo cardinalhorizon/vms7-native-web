@@ -5,6 +5,7 @@ namespace Modules\SmartCARSNative\Http\Controllers\Api;
 use App\Contracts\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Modules\SmartCARSNative\Models\SmartCARS3Session;
 
@@ -23,7 +24,7 @@ class PilotController extends Controller
 
         return [
             'dbID' => $user['id'],
-            'pilotID' => $user['airline']['icao'] . str_pad($user['pilotid'], $pilotIDSetting, "0", STR_PAD_LEFT),
+            'pilotID' => $user['airline']['icao'] . str_pad($user['pilot_id'], $pilotIDSetting, "0", STR_PAD_LEFT),
             'firstName' => explode(' ', $user['name'])[0],
             'lastName' => explode(' ', $user['name'])[1],
             'email' => $user['email'],
@@ -80,7 +81,7 @@ class PilotController extends Controller
     public function statistics(Request $request)
     {
         //dd(true);
-        $user = User::where('id', $request->get('pilotID'))->with('pireps')->first();
+        $user = User::where('id', Auth::user()->id)->with('pireps')->first();
         return response()->json([
             'hoursFlown' => $user->flight_time,
             'flightsFlown' => $user->pireps->count(),
