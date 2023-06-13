@@ -28,12 +28,12 @@ class PirepsController extends Controller
         $user_id = $request->get('pilotID');
 
         $pirep = Pirep::find($pirepID);
-        $pirep->load('comments', 'acars_log', 'acars');
+        $pirep->load('comments', 'acars_logs', 'acars');
 
         return response()->json([
             'flightLog' => $pirep->comments->map(function ($a ) { return $a->comment;}),
-            'locationData' => null,
-            'flightData' => null
+            'locationData' => $pirep->acars->map(function ($a) {return ['latitude' => $a->lat, 'longitude' => $a->lon, 'heading' => $a->heading];}),
+            'flightData' => $pirep->acars_logs->map(function ($a) { return $a->log; })
         ]);
 
     }
@@ -55,7 +55,7 @@ class PirepsController extends Controller
                 'id' => $pirep->id,
                 'submitDate' => $pirep->submitted_at,
                 'airlineCode' => $pirep->airline->icao,
-                'route' => $pirep->route,
+                'route' => [],
                 'number' => $pirep->flight_number,
                 'distance' => $pirep->planned_distance->getResponseUnits()['mi'],
                 'flightType' => $pirep->flight_type,
