@@ -30,3 +30,5 @@ While you're in smartCARS Central, install the "phpVMS 7 Native Flight Center", 
 ## Future Goals
 Eventually, this API will be expanded with additional endpoints and features which will coincide with the release of a
 custom flight center plugin.
+
+Support: https://discord.gg/BvPbQby9Mq
