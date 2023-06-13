@@ -5,6 +5,8 @@ namespace Modules\SmartCARSNative\Http\Controllers\Api;
 use App\Contracts\Controller;
 use App\Models\Aircraft;
 use App\Models\Airport;
+use App\Models\Enums\AircraftState;
+use App\Models\Enums\AircraftStatus;
 use App\Models\News;
 use Illuminate\Http\Request;
 
@@ -23,7 +25,10 @@ class DataController extends Controller
      */
     public function aircraft(Request $request)
     {
-        $aircraft = Aircraft::all();
+        if ($request->get('state') === "parked")
+            $aircraft = Aircraft::where('state', AircraftState::PARKED)->get();
+        else
+            $aircraft = Aircraft::all();
         $output = [];
         foreach ($aircraft as $item) {
             $output[] = [
