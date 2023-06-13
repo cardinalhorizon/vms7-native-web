@@ -10,6 +10,12 @@ With this module installed, you will gain additional functionality not present i
 * Auto-Accepting PIREP Rules Followed
 * Fully Working Live Map
 
+## Requirements
+
+* php 8.2 or greater
+* phpVMS 7 latest development branch
+* "phpVMS 7 Native Flight Center" plugin, available on smartCARS Central, installed to your VA, replacing the default flight-center.
+
 ## Installation
 Move this folder into your `modules` folder and verify that the folder is named `SmartCARSNative`.
 
