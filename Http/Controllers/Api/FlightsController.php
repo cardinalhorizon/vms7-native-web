@@ -107,6 +107,8 @@ class FlightsController extends Controller
             Log::info("Found Pirep to close out");
             $pirep->status = PirepStatus::ARRIVED;
             $pirep->state = PirepState::PENDING;
+            $pirep->source = PirepSource::ACARS;
+            $pirep->source_name = "smartCARS 3";
             $pirep->aircraft_id = $input['aircraft'];
             $pirep->landing_rate = $input['landingRate'];
             $pirep->fuel_used = $input['fuelUsed'];
@@ -213,6 +215,8 @@ class FlightsController extends Controller
             'arr_airport_id' => $flight->arr_airport_id,
             'aircraft_id' => $request->input('aircraftID'),
             'flight_id' => $flight->id,
+            'source' => PirepSource::ACARS,
+            'source_name' => "smartCARS 3"
         ];
         // Check if the pirep already exists.
         $existing = Pirep::where(['user_id' => $user->id, 'state' => PirepState::IN_PROGRESS])->first();
@@ -220,7 +224,8 @@ class FlightsController extends Controller
             try {
                 $pirep = $this->pirepService->prefile(Auth::user(), $attrs);
             } catch (\Exception $e) {
-                return response()->json(['message' => $e->getMessage()], 401);
+                logger($e);
+                return response()->json(['message' => $e->getMessage()], 500);
             }
             return response()->json($pirep);
         }
