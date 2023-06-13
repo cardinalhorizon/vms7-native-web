@@ -8,7 +8,7 @@ With this module installed, you will gain additional functionality not present i
 
 * Discord/Email Notifications
 * Auto-Accepting PIREP Rules Followed
-* Under the hood changes to the data handling to conform to the phpVMS 7 schema.
+* Fully Working Live Map
 
 ## Installation
 Move this folder into your `modules` folder and verify that the folder is named `SmartCARSNative`.
@@ -19,6 +19,8 @@ Finally, enter the following url for your community in smartCARS Central:
 ```text
 https://yourdomainhere.com/api/smartcarsnative/
 ```
+
+While you're in smartCARS Central, install the "phpVMS 7 Native Flight Center", which replaces the included flight center solution.
 ## Future Goals
 Eventually, this API will be expanded with additional endpoints and features which will coincide with the release of a
 custom flight center plugin.
