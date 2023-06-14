@@ -8,6 +8,7 @@ use App\Models\Airport;
 use App\Models\Enums\AircraftState;
 use App\Models\Enums\AircraftStatus;
 use App\Models\News;
+use App\Models\Subfleet;
 use Illuminate\Http\Request;
 
 /**
@@ -55,6 +56,10 @@ class DataController extends Controller
             ];
         }
         return response()->json($output);
+    }
+    public function subfleets(Request $request)
+    {
+        return response()->json(Subfleet::with('airline')->get());
     }
     public function airports(Request $request)
     {
