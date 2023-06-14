@@ -87,70 +87,52 @@ class FlightsController extends Controller
     }
     public function complete(Request $request)
     {
-        $client = new Client();
-        try {
-            $input = $request->all();
-            logger($input);
-            //Log::error();
-            //($request->all());
-            $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
-                'form_params' => [
-                    'content' => "Request "//var_dump($input)
-                ]
-            ]);
-            //dd($request);
-            $bid = Bid::find($input['bidID']);
-            $pirep = Pirep::where([
-                'user_id' => $request->get('pilotID'),
-                'flight_id' => $bid['flight_id'],
-                //'state' => PirepState::IN_PROGRESS
-            ])->first();
-            Log::info("Found Pirep to close out");
-            $pirep->status = PirepStatus::ARRIVED;
-            $pirep->state = PirepState::PENDING;
-            $pirep->source = PirepSource::ACARS;
-            $pirep->source_name = "smartCARS 3";
-            $pirep->aircraft_id = $input['aircraft'];
-            $pirep->landing_rate = $input['landingRate'];
-            $pirep->fuel_used = $input['fuelUsed'];
-            $pirep->flight_time = $input['flightTime']  * 60;
+        $input = $request->all();
+        logger($input);
+        //Log::error();
+        //($request->all());
+        
+        //dd($request);
+        $bid = Bid::find($input['bidID']);
+        $pirep = Pirep::where([
+            'user_id' => $request->get('pilotID'),
+            'flight_id' => $bid['flight_id'],
+            //'state' => PirepState::IN_PROGRESS
+        ])->first();
+        Log::info("Found Pirep to close out");
+        $pirep->status = PirepStatus::ARRIVED;
+        $pirep->state = PirepState::PENDING;
+        $pirep->source = PirepSource::ACARS;
+        $pirep->source_name = "smartCARS 3";
+        $pirep->aircraft_id = $input['aircraft'];
+        $pirep->landing_rate = $input['landingRate'];
+        $pirep->fuel_used = $input['fuelUsed'];
+        $pirep->flight_time = $input['flightTime']  * 60;
 
-            foreach ($input['flightData'] as $data) {
-                $log_item = new Acars();
-                $log_item->type = AcarsType::LOG;
-                $log_item->log = $data['message'];
-                $pirep->acars_logs()->save($log_item);
-            }
-            if (!is_null($input['comments']))
-            {
-                foreach ($input['flightLog'] as $comment) {
-                    if (str_contains($comment, " Comment:"))
-                    {
-                        $pirep->comments()->create([
-                            'user_id' => Auth::user()->id,
-                            'comment' => $comment
-                        ]);
-                    }
+        foreach ($input['flightData'] as $data) {
+            $log_item = new Acars();
+            $log_item->type = AcarsType::LOG;
+            $log_item->log = $data['message'];
+            $pirep->acars_logs()->save($log_item);
+        }
+        if (!is_null($input['comments']))
+        {
+            foreach ($input['flightLog'] as $comment) {
+                if (str_contains($comment, " Comment:"))
+                {
+                    $pirep->comments()->create([
+                        'user_id' => Auth::user()->id,
+                        'comment' => $comment
+                    ]);
                 }
             }
-
-            $pirep->save();
-            $this->pirepService->submit($pirep);
-
-
-
-            return response()->json(['pirepID' => $pirep->id]);
-        }catch (\Exception $e)
-        {
-            logger("Exception for SmartCARS Native: ".$e->getMessage()." on line ".$e->getLine()."/r/n".$e->getTraceAsString());
-            $client = new Client();
-
-            $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
-                'form_params' => [
-                    'content' => "Exception for SmartCARS Native: ".$e->getMessage()." on line ".$e->getLine()."/r/n"
-                ]
-            ]);
         }
+
+        $pirep->save();
+        $this->pirepService->submit($pirep);
+
+        return response()->json(['pirepID' => $pirep->id]);
+        
 
     }
     public function search(Request $request)
@@ -259,57 +241,40 @@ class FlightsController extends Controller
     }
     public function update(Request $request)
     {
-        $client = new Client();
-        try {
-            $input = $request->all();
-            logger($this->phaseToStatus($input['phase']));
-            $pilotID = $request->get('pilotID');
-            //$bid = Bid::join('pireps', 'bids.flight_id', '=', 'pireps.flight_id')
-            //    ->where(['bids.user_id' => $request->get('pilotID'), 'bids.id' => $request->input('bidID')])->first();
-            $bid = Bid::find($input['bidID']);
-            $pirep = Pirep::where([
-                'user_id' => $pilotID,
-                'flight_id' => $bid['flight_id'],
-                'state' => PirepState::IN_PROGRESS
-            ])->first();
-            if (is_null($pirep))
-            {
-                $bid = Bid::find($input['bidID']);
-                $pirep = Pirep::fromFlight(Flight::find($bid->flight_id));
-
-                $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
-                    'form_params' => [
-                        'content' => "Creating Flight"
-                    ]
-                ]);
-                $pirep->user()->associate($pilotID);
-                $pirep->state = PirepState::IN_PROGRESS;
-                $pirep->status = PirepStatus::BOARDING;
-                $pirep->source = PirepSource::ACARS;
-                $pirep->source_name = "smartCARS 3";
-                $pirep->save();
-            }
-            $pirep->status = $this->phaseToStatus($input['phase']);
-            $pirep->save();
-            $pirep->acars()->create([
-                'status' => $this->phaseToStatus($input['phase']),
-                'type' => AcarsType::FLIGHT_PATH,
-                'lat' => $input['latitude'],
-                'lon' => $input['longitude'],
-                'distance' => $input['distanceRemaining'],
-                'heading' => $input['heading'],
-                'altitude' => $input['altitude'],
-                'gs' => $input['groundSpeed']
-            ]);
-        }catch (\Exception $e)
+        $input = $request->all();
+        logger($this->phaseToStatus($input['phase']));
+        $pilotID = $request->get('pilotID');
+        //$bid = Bid::join('pireps', 'bids.flight_id', '=', 'pireps.flight_id')
+        //    ->where(['bids.user_id' => $request->get('pilotID'), 'bids.id' => $request->input('bidID')])->first();
+        $bid = Bid::find($input['bidID']);
+        $pirep = Pirep::where([
+            'user_id' => $pilotID,
+            'flight_id' => $bid['flight_id'],
+            'state' => PirepState::IN_PROGRESS
+        ])->first();
+        if (is_null($pirep))
         {
-            $client = new Client();
-            $client->request('POST', 'https://discord.com/api/webhooks/1005682336899276891/uz3PysPUB1Ywcx0mOUgiGhQqLej4N-EIb84v0y61SLxTgNN-UWuNYLWsAbh_i6YgpU1Y', [
-                'form_params' => [
-                    'content' => "Exception for SmartCARS Native: ".$e->getMessage()." on line ".$e->getLine()
-                ]
-            ]);
+            $bid = Bid::find($input['bidID']);
+            $pirep = Pirep::fromFlight(Flight::find($bid->flight_id));
+            $pirep->user()->associate($pilotID);
+            $pirep->state = PirepState::IN_PROGRESS;
+            $pirep->status = PirepStatus::BOARDING;
+            $pirep->source = PirepSource::ACARS;
+            $pirep->source_name = "smartCARS 3";
+            $pirep->save();
         }
+        $pirep->status = $this->phaseToStatus($input['phase']);
+        $pirep->save();
+        $pirep->acars()->create([
+            'status' => $this->phaseToStatus($input['phase']),
+            'type' => AcarsType::FLIGHT_PATH,
+            'lat' => $input['latitude'],
+            'lon' => $input['longitude'],
+            'distance' => $input['distanceRemaining'],
+            'heading' => $input['heading'],
+            'altitude' => $input['altitude'],
+            'gs' => $input['groundSpeed']
+        ]);
     }
 
     function phaseToStatus(string $phase) {
