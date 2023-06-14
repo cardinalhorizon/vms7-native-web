@@ -74,6 +74,7 @@ class FlightsController extends Controller
                 "flightTime" => $bid->flight->flight_time,
                 "daysOfWeek" => $bid->flight->days,
                 "flightID" => $bid->flight->id,
+                "type" => $bid->flight->flight_type,
                 "aircraft" => $aircraft
             ];
         }
@@ -157,7 +158,7 @@ class FlightsController extends Controller
         $output = [];
 
         $query = [];
-
+        $subfleet;
         if ($request->has('departureAirport') && $request->query('departureAirport') !== null) {
             $apt = Airport::where('icao', $request->query('departureAirport'))->first();
             if (!is_null($apt))
@@ -169,11 +170,31 @@ class FlightsController extends Controller
             if (!is_null($apt))
                 $query['arr_airport_id'] = $apt->id;
         }
-        if (empty($query)) {
-            $flights = Flight::with('subfleets', 'subfleets.aircraft', 'airline')->get()->take(100);
-        } else {
-            $flights = Flight::where($query)->with('subfleets', 'subfleets.aircraft', 'airline')->get()->take(100);
+        if ($request->has('aircraft') && $request->query('aircraft') !== null) {
+            // Yank the subfleet by ID
+            $apt = Subfleet::find($request->query('aircraft'));
+            if (!is_null($apt))
+                $subfleet = $apt->id;
         }
+        if (!empty($subfleet))
+        {
+            if (empty($query)) {
+                $flights = Flight::with('subfleets', 'subfleets.aircraft', 'airline')->whereHas('subfleets', function($query) use ($subfleet) {
+                    $query->where(['subfleets.id' => $subfleet]);
+                })->get()->take(100);
+            } else {
+                $flights = Flight::where($query)->with('subfleets', 'subfleets.aircraft', 'airline')->whereHas('subfleets', function($query) use ($subfleet) {
+                    $query->where(['subfleets.id' => $subfleet]);
+                })->get()->take(100);
+            }
+        } else {
+            if (empty($query)) {
+                $flights = Flight::with('subfleets', 'subfleets.aircraft', 'airline')->get()->take(100);
+            } else {
+                $flights = Flight::where($query)->with('subfleets', 'subfleets.aircraft', 'airline')->get()->take(100);
+            }
+        }
+
         foreach ($flights as $bid) {
             $aircraft = [];
             //dd($bid);
@@ -194,7 +215,7 @@ class FlightsController extends Controller
                 "arrivalTime" => $bid->arr_time,
                 "flightTime" => $bid->flight_time,
                 "daysOfWeek" => [],
-                "type" => "P",
+                "type" => $bid->flight_type,
                 "subfleets" => $aircraft
             ];
         }
