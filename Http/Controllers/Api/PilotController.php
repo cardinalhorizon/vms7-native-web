@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Modules\SmartCARSNative\Models\SmartCARS3Session;
 
 /**
  * class ApiController
@@ -16,9 +15,6 @@ use Modules\SmartCARSNative\Models\SmartCARS3Session;
 class PilotController extends Controller
 {
     private function retrieveUserInformation($user) {
-
-
-
 
         $pilotIDSetting = setting('pilots_id_length', 4);
 
@@ -44,7 +40,6 @@ class PilotController extends Controller
      */
     public function login(Request $request)
     {
-        SmartCARS3Session::where('expiry', '<', time())->delete();
         //return response()->json(true);
         // Get the User
         if (str_contains($request->query('username'), '@')) {
