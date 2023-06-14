@@ -1,5 +1,6 @@
-# smartCARS Native
-Welcome to smartCARS Native, a native implementation of the smartCARS 3 API directly within phpVMS 7 via a module.
+# Native for phpVMS 7
+
+Welcome to Native, a native implementation of the smartCARS 3 API directly within phpVMS 7 via a module.
 
 This module was created to address proper phpVMS 7 best practices for handling data, which are not present in the 1st
 party solution, located at https://github.com/invernyx/smartcars-3-public-api.
