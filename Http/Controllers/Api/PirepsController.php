@@ -7,6 +7,7 @@ use App\Models\Enums\PirepState;
 use App\Models\Pirep;
 use App\Models\PirepComment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 /**
@@ -29,11 +30,17 @@ class PirepsController extends Controller
 
         $pirep = Pirep::find($pirepID);
         $pirep->load('comments', 'acars_logs', 'acars');
-
+        $i = 0;
         return response()->json([
             'flightLog' => $pirep->comments->map(function ($a ) { return $a->comment;}),
             'locationData' => $pirep->acars->map(function ($a) {return ['latitude' => $a->lat, 'longitude' => $a->lon, 'heading' => $a->heading];}),
-            'flightData' => $pirep->acars_logs->map(function ($a) { return $a->log; })
+            'flightData' => $pirep->acars_logs->sortByDesc('created_at')->map(function ($a) use ($i) { $i++; return [
+                'eventId' => $a->id,
+                'eventTimestamp' => $a->created_at,
+                'eventElapsedTime' => $i,
+                'eventCondition' => null,
+                'message' => $a->log
+            ]; })
         ]);
 
     }
@@ -50,10 +57,10 @@ class PirepsController extends Controller
         $user = User::find($request->get('pilotID'));
         $user->load('pireps', 'pireps.airline');
         $output_pireps = [];
-        foreach ($user->pireps as $pirep) {
+        foreach ($user->pireps->sortByDesc('created_at') as $pirep) {
             $output_pireps[] = [
                 'id' => $pirep->id,
-                'submitDate' => $pirep->submitted_at,
+                'submitDate' => Carbon::createFromTimeString($pirep->submitted_at)->toDateString(),
                 'airlineCode' => $pirep->airline->icao,
                 'route' => [],
                 'number' => $pirep->flight_number,
