@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Services\BidService;
 use App\Services\FlightService;
 use App\Services\PirepService;
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -89,22 +90,13 @@ class FlightsController extends Controller
     {
         $input = $request->all();
         logger($input);
-        //Log::error();
-        //($request->all());
-        
         //dd($request);
-        $bid = Bid::find($input['bidID']);
-        $pirep = Pirep::where([
-            'user_id' => $request->get('pilotID'),
-            'flight_id' => $bid['flight_id'],
-            //'state' => PirepState::IN_PROGRESS
-        ])->first();
+        $pirep = Pirep::find($input['bidID']);
         Log::info("Found Pirep to close out");
         $pirep->status = PirepStatus::ARRIVED;
         $pirep->state = PirepState::PENDING;
         $pirep->source = PirepSource::ACARS;
         $pirep->source_name = "smartCARS 3";
-        $pirep->aircraft_id = $input['aircraft'];
         $pirep->landing_rate = $input['landingRate'];
         $pirep->fuel_used = $input['fuelUsed'];
         $pirep->flight_time = $input['flightTime']  * 60;
@@ -113,6 +105,7 @@ class FlightsController extends Controller
             $log_item = new Acars();
             $log_item->type = AcarsType::LOG;
             $log_item->log = $data['message'];
+            $log_item->created_at = Carbon::createFromTimeString($data['eventTimestamp']);
             $pirep->acars_logs()->save($log_item);
         }
         if (!is_null($input['comments']))
@@ -140,7 +133,7 @@ class FlightsController extends Controller
         $output = [];
 
         $query = [];
-        $subfleet;
+        $subfleet = null;
         if ($request->has('departureAirport') && $request->query('departureAirport') !== null) {
             $apt = Airport::where('icao', $request->query('departureAirport'))->first();
             if (!is_null($apt))
@@ -241,40 +234,27 @@ class FlightsController extends Controller
     }
     public function update(Request $request)
     {
-        $input = $request->all();
-        logger($this->phaseToStatus($input['phase']));
-        $pilotID = $request->get('pilotID');
-        //$bid = Bid::join('pireps', 'bids.flight_id', '=', 'pireps.flight_id')
-        //    ->where(['bids.user_id' => $request->get('pilotID'), 'bids.id' => $request->input('bidID')])->first();
-        $bid = Bid::find($input['bidID']);
-        $pirep = Pirep::where([
-            'user_id' => $pilotID,
-            'flight_id' => $bid['flight_id'],
-            'state' => PirepState::IN_PROGRESS
-        ])->first();
-        if (is_null($pirep))
-        {
-            $bid = Bid::find($input['bidID']);
-            $pirep = Pirep::fromFlight(Flight::find($bid->flight_id));
-            $pirep->user()->associate($pilotID);
-            $pirep->state = PirepState::IN_PROGRESS;
-            $pirep->status = PirepStatus::BOARDING;
-            $pirep->source = PirepSource::ACARS;
-            $pirep->source_name = "smartCARS 3";
+        try {
+            $input = $request->all();
+            $pirep = Pirep::find($input['bidID']);
+
+            $pirep->status = $this->phaseToStatus($input['phase']);
             $pirep->save();
+            $pirep->acars()->create([
+                'status' => $this->phaseToStatus($input['phase']),
+                'type' => AcarsType::FLIGHT_PATH,
+                'lat' => $input['latitude'],
+                'lon' => $input['longitude'],
+                'distance' => $input['distanceRemaining'],
+                'heading' => $input['heading'],
+                'altitude' => $input['altitude'],
+                'gs' => $input['groundSpeed']
+            ]);
+        }catch (\Exception $e)
+        {
+            logger($e->getTrace());
+            
         }
-        $pirep->status = $this->phaseToStatus($input['phase']);
-        $pirep->save();
-        $pirep->acars()->create([
-            'status' => $this->phaseToStatus($input['phase']),
-            'type' => AcarsType::FLIGHT_PATH,
-            'lat' => $input['latitude'],
-            'lon' => $input['longitude'],
-            'distance' => $input['distanceRemaining'],
-            'heading' => $input['heading'],
-            'altitude' => $input['altitude'],
-            'gs' => $input['groundSpeed']
-        ]);
     }
 
     function phaseToStatus(string $phase) {
