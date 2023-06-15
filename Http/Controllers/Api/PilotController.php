@@ -21,7 +21,7 @@ class PilotController extends Controller
         if ($user->avatar == null) {
             $avatar = $user->gravatar(38);
         } else {
-            $avatar = Auth::user()->avatar->url;
+            $avatar = $user->avatar->url;
         }
 
         return [
