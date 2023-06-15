@@ -1,4 +1,4 @@
-# Native for phpVMS 7
+# Native for phpVMS 7 and smartCARS 3
 
 Welcome to Native, a native implementation of the smartCARS 3 API directly within phpVMS 7 via a module.
 
