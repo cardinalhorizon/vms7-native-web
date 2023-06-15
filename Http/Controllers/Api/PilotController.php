@@ -17,6 +17,12 @@ class PilotController extends Controller
     private function retrieveUserInformation($user) {
 
         $pilotIDSetting = setting('pilots_id_length', 4);
+        $avatar = null;
+        if ($user->avatar == null) {
+            $avatar = $user->gravatar(38);
+        } else {
+            $avatar = Auth::user()->avatar->url;
+        }
 
         return [
             'dbID' => $user['id'],
@@ -25,9 +31,9 @@ class PilotController extends Controller
             'lastName' => explode(' ', $user['name'])[1],
             'email' => $user['email'],
             'rank' => $user['rank']['name'],
-            'rankImage' => "", // TODO: Add Rank Image
+            'rankImage' => null, // TODO: Add Rank Image
             'rankLevel' => 0,
-            'avatar' => "", // TODO: Add Avatar URL
+            'avatar' => $avatar, // TODO: Add Avatar URL
             'session' => $user['api_key']
         ];
     }
@@ -78,7 +84,7 @@ class PilotController extends Controller
         //dd(true);
         $user = User::where('id', Auth::user()->id)->with('pireps')->first();
         return response()->json([
-            'hoursFlown' => $user->flight_time,
+            'hoursFlown' => $user->flight_time  / 60,
             'flightsFlown' => $user->pireps->count(),
             'averageLandingRate' => $user->pireps->avg('landing_rate'),
             'pirepsFiled' => $user->pireps->count(),
