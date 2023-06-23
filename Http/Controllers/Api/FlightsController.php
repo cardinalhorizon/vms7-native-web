@@ -101,6 +101,17 @@ class FlightsController extends Controller
         $pirep->fuel_used = $input['fuelUsed'];
         $pirep->flight_time = $input['flightTime']  * 60;
 
+        if (gettype($input['flightLog']) === "string") {
+            $input['flightLog'] = base64_decode($input['flightLog']);
+            $input['flightLog'] = explode("\n", $input['flightLog']);
+            logger($input['flightLog']);
+        }
+        if (gettype($input['flightData']) === "string") {
+            $input['flightData'] = base64_decode($input['flightData']);
+            $input['flightData'] = json_decode($input['flightData'], true);
+            logger($input['flightLog']);
+        }
+
         foreach ($input['flightData'] as $data) {
             $log_item = new Acars();
             $log_item->type = AcarsType::LOG;
