@@ -109,7 +109,7 @@ class FlightsController extends Controller
         if (gettype($input['flightData']) === "string") {
             $input['flightData'] = base64_decode($input['flightData']);
             $input['flightData'] = json_decode($input['flightData'], true);
-            logger($input['flightLog']);
+            logger($input['flightData']);
         }
 
         foreach ($input['flightData'] as $data) {
