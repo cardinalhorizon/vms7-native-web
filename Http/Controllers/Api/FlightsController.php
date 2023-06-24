@@ -84,7 +84,28 @@ class FlightsController extends Controller
     }
     public function charter(Request $request)
     {
-        return $this->message('Hello, world!');
+        $attrs = [
+            'flight_number' => $request->flight_number,
+            'airline_id' => $request->airline_id,
+            'dpt_airport_id' => $request->dpt_airport_id,
+            'arr_airport_id' => $request->arr_airport_id,
+            'aircraft_id' => $request->input('aircraftID'),
+            'flight_id' => $request->id,
+            'source' => PirepSource::ACARS,
+            'source_name' => "smartCARS 3"
+        ];
+        // Check if the pirep already exists.
+        $existing = Pirep::where(['user_id' => $request->id, 'state' => PirepState::IN_PROGRESS])->first();
+        if (is_null($existing)) {
+            try {
+                $pirep = $this->pirepService->prefile(Auth::user(), $attrs);
+            } catch (\Exception $e) {
+                logger($e);
+                return response()->json(['message' => $e->getMessage()], 500);
+            }
+            return response()->json($pirep);
+        }
+        return response()->json($existing);
     }
     public function complete(Request $request)
     {
@@ -136,7 +157,7 @@ class FlightsController extends Controller
         $this->pirepService->submit($pirep);
 
         return response()->json(['pirepID' => $pirep->id]);
-        
+
 
     }
     public function search(Request $request)
@@ -264,7 +285,7 @@ class FlightsController extends Controller
         }catch (\Exception $e)
         {
             logger($e->getTrace());
-            
+
         }
     }
 

@@ -70,7 +70,7 @@ class PirepsController extends Controller
                 'arrivalAirport' => $pirep->arr_airport_id,
                 'aircraft' => $pirep->aircraft_id,
                 'status' => self::getStatus($pirep->state),
-                'flightTime' => $pirep->flight_time,
+                'flightTime' => $pirep->flight_time / 60,
                 'landingRate' => $pirep->landing_rate,
                 'fuelUsed' => $pirep->fuel_used->getResponseUnits()['lbs']
             ];
