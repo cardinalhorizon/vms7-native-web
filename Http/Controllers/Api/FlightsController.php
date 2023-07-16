@@ -55,19 +55,22 @@ class FlightsController extends Controller
         foreach ($bids as $bid) {
             // Aircraft Array
             $aircraft = [];
-            foreach ($bid->flight->subfleets as $subfleet) {
-                foreach ($subfleet->aircraft as $acf) {
-                    $aircraft[] = $acf['id'];
+            if ($bid->flight->simbrief) {
+                $aircraft[] = $bid->flight->simbrief->aircraft->id;
+            } else {
+                foreach ($bid->flight->subfleets as $subfleet) {
+                    foreach ($subfleet->aircraft as $acf) {
+                        $aircraft[] = $acf['id'];
+                    }
                 }
             }
-
             $output[] = [
                 "bidID" => $bid->id,
                 "number" => $bid->flight->flight_number,
                 "code" => $bid->flight->airline->code,
                 "departureAirport" => $bid->flight->dpt_airport_id,
                 "arrivalAirport" => $bid->flight->arr_airport_id,
-                "route" => [],
+                "route" => $bid->flight->route,
                 "flightLevel" => $bid->flight->level,
                 "distance" => $bid->flight->distance,
                 "departureTime" => $bid->flight->dpt_time,
@@ -262,7 +265,10 @@ class FlightsController extends Controller
     }
     public function unbook(Request $request)
     {
-        Bid::where(['user_id' => $request->get('pilotID'), 'id' => $request->post('bidID')])->delete();
+
+        $bid = Bid::where(['user_id' => $request->get('pilotID'), 'id' => $request->post('bidID')])->first();
+
+        $this->bidService->removeBid(Flight::find($bid->flight_id), Auth::user());
     }
     public function update(Request $request)
     {
