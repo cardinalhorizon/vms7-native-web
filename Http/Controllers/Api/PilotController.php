@@ -23,12 +23,19 @@ class PilotController extends Controller
         } else {
             $avatar = $user->avatar->url;
         }
-
+        $name = explode(' ', $user['name']);
+        if (count($name) <= 1) {
+            $first = $name[0];
+            $last = "";
+        } else {
+            $first = $name[0];
+            $last = $name[1];
+        }
         return [
             'dbID' => $user['id'],
             'pilotID' => $user['airline']['icao'] . str_pad($user['pilot_id'], $pilotIDSetting, "0", STR_PAD_LEFT),
-            'firstName' => explode(' ', $user['name'])[0],
-            'lastName' => explode(' ', $user['name'])[1],
+            'firstName' => $first,
+            'lastName' => $last,
             'email' => $user['email'],
             'rank' => $user['rank']['name'],
             'rankImage' => null, // TODO: Add Rank Image
