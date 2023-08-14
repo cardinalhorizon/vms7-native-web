@@ -70,7 +70,7 @@ class FlightsController extends Controller
                 "code" => $bid->flight->airline->code,
                 "departureAirport" => $bid->flight->dpt_airport_id,
                 "arrivalAirport" => $bid->flight->arr_airport_id,
-                "route" => $bid->flight->route,
+                "route" => null,
                 "flightLevel" => $bid->flight->level,
                 "distance" => $bid->flight->distance,
                 "departureTime" => $bid->flight->dpt_time,
