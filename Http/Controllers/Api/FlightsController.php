@@ -85,6 +85,9 @@ class FlightsController extends Controller
 
         return response()->json($output);
     }
+    public function cancel(Request $request) {
+
+    }
     public function charter(Request $request)
     {
         $attrs = [
@@ -93,7 +96,6 @@ class FlightsController extends Controller
             'dpt_airport_id' => $request->dpt_airport_id,
             'arr_airport_id' => $request->arr_airport_id,
             'aircraft_id' => $request->input('aircraftID'),
-            'flight_id' => $request->id,
             'source' => PirepSource::ACARS,
             'source_name' => "smartCARS 3"
         ];
@@ -190,18 +192,18 @@ class FlightsController extends Controller
         {
             if (empty($query)) {
                 $flights = Flight::with('subfleets', 'subfleets.aircraft', 'airline')->whereHas('subfleets', function($query) use ($subfleet) {
-                    $query->where(['subfleets.id' => $subfleet]);
-                })->get()->take(100);
+                    $query->where(['subfleets.id' => $subfleet, 'visible' => true]);
+                })->take(100)->get();
             } else {
                 $flights = Flight::where($query)->with('subfleets', 'subfleets.aircraft', 'airline')->whereHas('subfleets', function($query) use ($subfleet) {
-                    $query->where(['subfleets.id' => $subfleet]);
-                })->get()->take(100);
+                    $query->where(['subfleets.id' => $subfleet, 'visible' => true]);
+                })->take(100)->get();
             }
         } else {
             if (empty($query)) {
-                $flights = Flight::with('subfleets', 'subfleets.aircraft', 'airline')->get()->take(100);
+                $flights = Flight::with('subfleets', 'subfleets.aircraft', 'airline')->where('visible', true)->take(100)->get();
             } else {
-                $flights = Flight::where($query)->with('subfleets', 'subfleets.aircraft', 'airline')->get()->take(100);
+                $flights = Flight::where($query)->with('subfleets', 'subfleets.aircraft', 'airline')->where('visible', true)->take(100)->get();
             }
         }
 
