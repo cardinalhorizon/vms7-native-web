@@ -86,7 +86,9 @@ class FlightsController extends Controller
         return response()->json($output);
     }
     public function cancel(Request $request) {
-
+        $pirep = Pirep::where(['id' => $request->input('bidID')])->first();
+        $this->pirepService->cancel($pirep);
+        //$this->bidService->removeBidForPirep($pirep);
     }
     public function charter(Request $request)
     {
@@ -126,6 +128,7 @@ class FlightsController extends Controller
         $pirep->landing_rate = $input['landingRate'];
         $pirep->fuel_used = $input['fuelUsed'];
         $pirep->flight_time = $input['flightTime']  * 60;
+        $pirep->submitted_at = Carbon::now('UTC');
 
         if (gettype($input['flightLog']) === "string") {
             $input['flightLog'] = base64_decode($input['flightLog']);

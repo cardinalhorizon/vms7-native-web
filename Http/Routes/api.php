@@ -12,7 +12,7 @@ use \Modules\SmartCARSNative\Http\Middleware\SCHeaders;
 
 Route::group(['middleware' => [SCHeaders::class]], function() {
     Route::match(['get', 'options'], '/', function () {
-        return response()->json(["apiVersion" => "0.4.2", "handler" => "phpvms7-native"]);
+        return response()->json(["apiVersion" => "0.4.3", "handler" => "phpvms7-native"]);
     });
     Route::match(['post', 'options'], '/pilot/login', [PilotController::class, 'login']);
     Route::match(['post', 'options'], '/pilot/resume', [PilotController::class, 'resume']);
@@ -34,6 +34,7 @@ Route::group(['middleware' => [SCHeaders::class]], function() {
             Route::match(['get', 'options'], '/bookings', 'bookings');
             Route::match(['post', 'options'], '/charter', 'charter');
             Route::match(['post', 'options'], '/complete', 'complete');
+            Route::match(['post', 'options'], '/cancel', 'cancel');
             Route::match(['post', 'options'], '/prefile', 'prefile');
             Route::match(['get', 'options'], '/search', 'search');
             Route::match(['post', 'options'], '/unbook', 'unbook');
