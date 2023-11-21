@@ -247,6 +247,9 @@ class FlightsController extends Controller
         $attrs = [
             'flight_number' => $flight->flight_number,
             'airline_id' => $flight->airline_id,
+            'route_code' => $flight->route_code,
+            'route_leg' => $flight->route_leg,
+            'flight_type' => $flight->flight_type,
             'dpt_airport_id' => $flight->dpt_airport_id,
             'arr_airport_id' => $flight->arr_airport_id,
             'aircraft_id' => $request->input('aircraftID'),
@@ -255,8 +258,8 @@ class FlightsController extends Controller
             'source_name' => "smartCARS 3"
         ];
         // Check if the pirep already exists.
-        $existing = Pirep::where(['user_id' => $user->id, 'state' => PirepState::IN_PROGRESS])->first();
-        if (is_null($existing)) {
+        //$existing = Pirep::where(['user_id' => $user->id, 'state' => PirepState::IN_PROGRESS])->first();
+        //if (is_null($existing)) {
             try {
                 $pirep = $this->pirepService->prefile(Auth::user(), $attrs);
             } catch (\Exception $e) {
@@ -264,8 +267,8 @@ class FlightsController extends Controller
                 return response()->json(['message' => $e->getMessage()], 500);
             }
             return response()->json($pirep);
-        }
-        return response()->json($existing);
+        //}
+        //return response()->json($existing);
 
     }
     public function unbook(Request $request)
