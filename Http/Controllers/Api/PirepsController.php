@@ -34,7 +34,7 @@ class PirepsController extends Controller
         return response()->json([
             'flightLog' => $pirep->comments->map(function ($a ) { return $a->comment;}),
             'locationData' => $pirep->acars->map(function ($a) {return ['latitude' => $a->lat, 'longitude' => $a->lon, 'heading' => $a->heading];}),
-            'flightData' => $pirep->acars_logs->sortByDesc('created_at')->map(function ($a) use ($i) { $i++; return [
+            'flightData' => $pirep->acars_logs->sortBy('created_at')->map(function ($a) use ($i) { $i++; return [
                 'eventId' => $a->id,
                 'eventTimestamp' => $a->created_at,
                 'eventElapsedTime' => $i,
