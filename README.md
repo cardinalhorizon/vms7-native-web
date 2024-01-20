@@ -1,3 +1,7 @@
+<h4 align="center" color="red">
+THIS REPOSITORY IS NOW A ARCHIVE. PLEASE USE THE NEW OFFICIALLY SUPPORTED MODULE AT https://github.com/invernyx/smartcars-3-phpvms7-api
+</h4>
+
 # Native for phpVMS 7 and smartCARS 3
 
 Welcome to Native, a native implementation of the smartCARS 3 API directly within phpVMS 7 via a module.
